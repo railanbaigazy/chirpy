@@ -20,7 +20,7 @@ func runServer() error {
 	mux := http.NewServeMux()
 	apiCfg, err := startDB()
 	if err != nil {
-		fmt.Errorf("error starting database: %s", err)
+		return fmt.Errorf("error starting database: %s", err)
 	}
 	fileserverHandler := apiCfg.middlewareMetricsInc(
 		http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))),
