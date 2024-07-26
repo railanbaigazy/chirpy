@@ -1,16 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/joho/godotenv"
 )
-
-type apiConfig struct {
-	fileserverHits int
-}
 
 func runServer() error {
 	const filepathRoot = "dist"
@@ -21,7 +18,10 @@ func runServer() error {
 	}
 
 	mux := http.NewServeMux()
-	apiCfg := apiConfig{fileserverHits: 0}
+	apiCfg, err := startDB()
+	if err != nil {
+		fmt.Errorf("error starting database: %s", err)
+	}
 	fileserverHandler := apiCfg.middlewareMetricsInc(
 		http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))),
 	)
@@ -30,17 +30,18 @@ func runServer() error {
 	mux.HandleFunc("GET /api/healthz", readinessHandler)
 	mux.HandleFunc("GET /admin/metrics", apiCfg.metricsHandler)
 	mux.HandleFunc("GET /api/reset", apiCfg.resetMetricsHandler)
-	mux.HandleFunc("POST /api/validate_chirp", validateChirpHandler)
+	mux.HandleFunc("POST /api/chirps", apiCfg.createChirpHandler)
+	mux.HandleFunc("GET /api/chirps", apiCfg.getChirpsHandler)
 
 	server := &http.Server{
 		Addr:    ":" + port,
 		Handler: mux,
 	}
 
-	err := server.ListenAndServe()
+	err = server.ListenAndServe()
 	log.Println("Starting server on port", port)
 	if err != nil {
-		log.Fatalf("Error starting server: %s", err)
+		return fmt.Errorf("error starting server: %s", err)
 	}
 	return nil
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 )
@@ -10,29 +11,29 @@ type ChirpReq struct {
 	Body string `json:"body"`
 }
 
-type SuccessResp struct {
-	CleanedBody string `json:"cleaned_body"`
-}
-
 var profanes []string = []string{"kerfuffle", "sharbert", "fornax"}
 
-func validateChirpHandler(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	chirp := ChirpReq{}
-	err := json.NewDecoder(r.Body).Decode(&chirp)
+	chirpReq := ChirpReq{}
+	err := json.NewDecoder(r.Body).Decode(&chirpReq)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
-	if len(chirp.Body) > 140 {
+	if len(chirpReq.Body) > 140 {
 		respondWithError(w, http.StatusBadRequest, "Chirp is too long")
 		return
 	}
 
-	cleanedBody := cleanText(chirp.Body)
-	respondWithJSON(w, http.StatusOK, SuccessResp{CleanedBody: cleanedBody})
+	cleanedBody := cleanText(chirpReq.Body)
+	chirp, err := cfg.db.CreateChirp(cleanedBody)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, fmt.Sprint(err))
+	}
+	respondWithJSON(w, 201, chirp)
 }
 
 func cleanText(body string) string {
