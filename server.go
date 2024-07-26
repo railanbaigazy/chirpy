@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 	"os"
 
@@ -13,6 +13,8 @@ func runServer() error {
 	port := os.Getenv("PORT")
 
 	mux := http.NewServeMux()
+	mux.Handle("/app/*", http.StripPrefix("/app", http.FileServer(http.Dir("app"))))
+	mux.HandleFunc("/healthz", readinessHandler)
 
 	server := &http.Server{
 		Addr:    ":" + port,
@@ -20,8 +22,18 @@ func runServer() error {
 	}
 
 	err := server.ListenAndServe()
+	log.Println("Starting server on port", port)
 	if err != nil {
-		return fmt.Errorf("error starting server: %v", err)
+		log.Fatalf("Error starting server: %s", err)
 	}
 	return nil
+}
+
+func readinessHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	_, err := w.Write([]byte("OK"))
+	if err != nil {
+		log.Println("error writing response:", err)
+	}
 }
