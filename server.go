@@ -27,9 +27,10 @@ func runServer() error {
 	)
 
 	mux.Handle("/app/*", fileserverHandler)
-	mux.HandleFunc("GET /healthz", readinessHandler)
-	mux.HandleFunc("GET /metrics", apiCfg.metricsHandler)
-	mux.HandleFunc("GET /reset", apiCfg.resetMetricsHandler)
+	mux.HandleFunc("GET /api/healthz", readinessHandler)
+	mux.HandleFunc("GET /admin/metrics", apiCfg.metricsHandler)
+	mux.HandleFunc("GET /api/reset", apiCfg.resetMetricsHandler)
+	mux.HandleFunc("POST /api/validate_chirp", validateChirpHandler)
 
 	server := &http.Server{
 		Addr:    ":" + port,
