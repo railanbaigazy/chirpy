@@ -22,12 +22,14 @@ func runServer() error {
 
 	mux := http.NewServeMux()
 	apiCfg := apiConfig{fileserverHits: 0}
-	fileserverHandler := http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))
+	fileserverHandler := apiCfg.middlewareMetricsInc(
+		http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))),
+	)
 
-	mux.Handle("/app/*", apiCfg.middlewareMetricsInc(fileserverHandler))
-	mux.HandleFunc("/healthz", readinessHandler)
-	mux.HandleFunc("/metrics", apiCfg.metricsHandler)
-	mux.HandleFunc("/reset", apiCfg.resetMetricsHandler)
+	mux.Handle("/app/*", fileserverHandler)
+	mux.HandleFunc("GET /healthz", readinessHandler)
+	mux.HandleFunc("GET /metrics", apiCfg.metricsHandler)
+	mux.HandleFunc("GET /reset", apiCfg.resetMetricsHandler)
 
 	server := &http.Server{
 		Addr:    ":" + port,
