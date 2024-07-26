@@ -8,13 +8,26 @@ import (
 	"github.com/joho/godotenv"
 )
 
+type apiConfig struct {
+	fileserverHits int
+}
+
 func runServer() error {
+	const filepathRoot = "dist"
 	godotenv.Load(".env")
 	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/app/*", http.StripPrefix("/app", http.FileServer(http.Dir("app"))))
+	apiCfg := apiConfig{fileserverHits: 0}
+	fileserverHandler := http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))
+
+	mux.Handle("/app/*", apiCfg.middlewareMetricsInc(fileserverHandler))
 	mux.HandleFunc("/healthz", readinessHandler)
+	mux.HandleFunc("/metrics", apiCfg.metricsHandler)
+	mux.HandleFunc("/reset", apiCfg.resetMetricsHandler)
 
 	server := &http.Server{
 		Addr:    ":" + port,
@@ -27,13 +40,4 @@ func runServer() error {
 		log.Fatalf("Error starting server: %s", err)
 	}
 	return nil
-}
-
-func readinessHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	_, err := w.Write([]byte("OK"))
-	if err != nil {
-		log.Println("error writing response:", err)
-	}
 }
