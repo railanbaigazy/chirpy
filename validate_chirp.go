@@ -3,19 +3,18 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 )
 
 type ChirpReq struct {
 	Body string `json:"body"`
 }
 
-type ErrorResp struct {
-	Error string `json:"error"`
+type SuccessResp struct {
+	CleanedBody string `json:"cleaned_body"`
 }
 
-type SuccessResp struct {
-	Valid bool `json:"valid"`
-}
+var profanes []string = []string{"kerfuffle", "sharbert", "fornax"}
 
 func validateChirpHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -23,17 +22,34 @@ func validateChirpHandler(w http.ResponseWriter, r *http.Request) {
 	chirp := ChirpReq{}
 	err := json.NewDecoder(r.Body).Decode(&chirp)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorResp{Error: "Invalid request body"})
+		respondWithError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	if len(chirp.Body) > 140 {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorResp{Error: "Chirp is too long"})
+		respondWithError(w, http.StatusBadRequest, "Chirp is too long")
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(SuccessResp{Valid: true})
+	cleanedBody := cleanText(chirp.Body)
+	respondWithJSON(w, http.StatusOK, SuccessResp{CleanedBody: cleanedBody})
+}
+
+func cleanText(body string) string {
+	words := strings.Fields(body)
+	cleanedBody := []string{}
+	for _, word := range words {
+		isProfane := false
+		for _, profane := range profanes {
+			if strings.ToLower(word) == profane {
+				cleanedBody = append(cleanedBody, "****")
+				isProfane = true
+				break
+			}
+		}
+		if !isProfane {
+			cleanedBody = append(cleanedBody, word)
+		}
+	}
+	return strings.Join(cleanedBody, " ")
 }
