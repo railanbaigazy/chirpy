@@ -12,6 +12,7 @@ import (
 type apiConfig struct {
 	fileserverHits int
 	db             *database.DB
+	jwtSecret      string
 }
 
 func startDB() (apiConfig, error) {
@@ -33,5 +34,6 @@ func startDB() (apiConfig, error) {
 		return apiConfig{}, fmt.Errorf("failed to initialize database: %v", err)
 	}
 	log.Print("Config is created")
-	return apiConfig{fileserverHits: 0, db: db}, nil
+	jwtSecret := os.Getenv("JWS_SECRET")
+	return apiConfig{fileserverHits: 0, db: db, jwtSecret: jwtSecret}, nil
 }

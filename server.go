@@ -11,7 +11,7 @@ import (
 
 func runServer() error {
 	const filepathRoot = "dist"
-	godotenv.Load(".env")
+	godotenv.Load()
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -35,6 +35,7 @@ func runServer() error {
 	mux.HandleFunc("GET /api/chirps/{chirpid}", apiCfg.getChirpByIDHandler)
 	mux.HandleFunc("POST /api/users", apiCfg.createUserHandler)
 	mux.HandleFunc("POST /api/login", apiCfg.loginHandler)
+	mux.HandleFunc("PUT /api/users", apiCfg.updateUserHandler)
 
 	server := &http.Server{
 		Addr:    ":" + port,
