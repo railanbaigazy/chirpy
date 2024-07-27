@@ -30,6 +30,11 @@ func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	if len(userReq.Password) < 5 {
+		respondWithError(w, http.StatusBadRequest, "weak password")
+		return
+	}
+
 	hashPassword, err := bcrypt.GenerateFromPassword([]byte(userReq.Password), bcrypt.DefaultCost)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, fmt.Sprint(err))
