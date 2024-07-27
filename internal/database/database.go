@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -12,8 +13,14 @@ type Chirp struct {
 	Body string `json:"body"`
 }
 
+type User struct {
+	ID    int    `json:"id"`
+	Email string `json:"email"`
+}
+
 type DBStructure struct {
 	Chirps map[int]Chirp `json:"chirps"`
+	Users  map[int]User  `json:"users"`
 }
 
 type DB struct {
@@ -36,6 +43,7 @@ func (db *DB) ensureDB() error {
 	if _, err := os.Stat(db.path); os.IsNotExist(err) {
 		initialData := DBStructure{
 			Chirps: make(map[int]Chirp),
+			Users:  make(map[int]User),
 		}
 		return db.writeDB(initialData)
 	}
@@ -116,4 +124,33 @@ func (db *DB) GetChirpByID(id int) (Chirp, error) {
 	}
 
 	return chirp, nil
+}
+
+func (db *DB) CreateUser(email string) (User, error) {
+	db.mux.Lock()
+	defer db.mux.Unlock()
+
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return User{}, err
+	}
+
+	for _, userVal := range dbStructure.Users {
+		if email == userVal.Email {
+			return User{}, errors.New("user already exists")
+		}
+	}
+
+	id := len(dbStructure.Users) + 1
+	user := User{
+		ID:    id,
+		Email: strings.ToLower(email),
+	}
+
+	dbStructure.Users[id] = user
+	if err = db.writeDB(dbStructure); err != nil {
+		return User{}, err
+	}
+
+	return user, nil
 }
