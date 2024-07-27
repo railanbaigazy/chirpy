@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 	"sync"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Chirp struct {
@@ -14,6 +16,12 @@ type Chirp struct {
 }
 
 type User struct {
+	ID       int    `json:"id"`
+	Email    string `json:"email"`
+	Password []byte `json:"password"`
+}
+
+type UserResp struct {
 	ID    int    `json:"id"`
 	Email string `json:"email"`
 }
@@ -126,31 +134,70 @@ func (db *DB) GetChirpByID(id int) (Chirp, error) {
 	return chirp, nil
 }
 
-func (db *DB) CreateUser(email string) (User, error) {
+func (db *DB) CreateUser(email string, password []byte) (UserResp, error) {
 	db.mux.Lock()
 	defer db.mux.Unlock()
 
 	dbStructure, err := db.loadDB()
 	if err != nil {
-		return User{}, err
+		return UserResp{}, err
 	}
 
-	for _, userVal := range dbStructure.Users {
-		if email == userVal.Email {
-			return User{}, errors.New("user already exists")
-		}
+	if ok, _ := dbStructure.userExists(email); ok {
+		return UserResp{}, errors.New("user already exists")
 	}
 
 	id := len(dbStructure.Users) + 1
 	user := User{
+		ID:       id,
+		Email:    strings.ToLower(email),
+		Password: password,
+	}
+	userResp := UserResp{
 		ID:    id,
 		Email: strings.ToLower(email),
 	}
 
 	dbStructure.Users[id] = user
 	if err = db.writeDB(dbStructure); err != nil {
-		return User{}, err
+		return UserResp{}, err
 	}
 
-	return user, nil
+	return userResp, nil
+}
+
+func (db *DB) Login(email string, password string) (UserResp, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return UserResp{}, err
+	}
+
+	ok, user := dbStructure.userExists(email)
+	if !ok {
+		return UserResp{}, errors.New("no such user found")
+	}
+
+	err = bcrypt.CompareHashAndPassword(user.Password, []byte(password))
+	if err != nil {
+		return UserResp{}, errors.New("incorrect password")
+	}
+
+	userResp := UserResp{
+		ID:    user.ID,
+		Email: user.Email,
+	}
+
+	return userResp, nil
+}
+
+func (dbStructure *DBStructure) userExists(email string) (bool, User) {
+	for _, userVal := range dbStructure.Users {
+		if email == userVal.Email {
+			return true, userVal
+		}
+	}
+	return false, User{}
 }

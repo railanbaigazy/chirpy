@@ -34,6 +34,7 @@ func runServer() error {
 	mux.HandleFunc("GET /api/chirps", apiCfg.getChirpsHandler)
 	mux.HandleFunc("GET /api/chirps/{chirpid}", apiCfg.getChirpByIDHandler)
 	mux.HandleFunc("POST /api/users", apiCfg.createUserHandler)
+	mux.HandleFunc("POST /api/login", apiCfg.loginHandler)
 
 	server := &http.Server{
 		Addr:    ":" + port,

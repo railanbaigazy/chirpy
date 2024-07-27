@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type userRequest struct {
-	Email string `json:"email"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +30,13 @@ func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	user, err := cfg.db.CreateUser(userReq.Email)
+	hashPassword, err := bcrypt.GenerateFromPassword([]byte(userReq.Password), bcrypt.DefaultCost)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, fmt.Sprint(err))
+		return
+	}
+
+	user, err := cfg.db.CreateUser(userReq.Email, hashPassword)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, fmt.Sprint(err))
 		return
