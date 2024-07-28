@@ -27,15 +27,20 @@ func runServer() error {
 	)
 
 	mux.Handle("/app/*", fileserverHandler)
+
 	mux.HandleFunc("GET /api/healthz", readinessHandler)
 	mux.HandleFunc("GET /admin/metrics", apiCfg.metricsHandler)
 	mux.HandleFunc("GET /api/reset", apiCfg.resetMetricsHandler)
+
 	mux.HandleFunc("POST /api/chirps", apiCfg.createChirpHandler)
 	mux.HandleFunc("GET /api/chirps", apiCfg.getChirpsHandler)
 	mux.HandleFunc("GET /api/chirps/{chirpid}", apiCfg.getChirpByIDHandler)
+	mux.HandleFunc("DELETE /api/chirps/{chirpid}", apiCfg.deleteChirpHandler)
+
 	mux.HandleFunc("POST /api/users", apiCfg.createUserHandler)
 	mux.HandleFunc("POST /api/login", apiCfg.loginHandler)
 	mux.HandleFunc("PUT /api/users", apiCfg.updateUserHandler)
+
 	mux.HandleFunc("POST /api/refresh", apiCfg.refreshAccessTokenHandler)
 	mux.HandleFunc("POST /api/revoke", apiCfg.revokeRefreshTokenHandler)
 

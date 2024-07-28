@@ -93,3 +93,28 @@ func (cfg *apiConfig) getChirpByIDHandler(w http.ResponseWriter, r *http.Request
 	}
 	respondWithJSON(w, http.StatusOK, chirp)
 }
+
+func (cfg *apiConfig) deleteChirpHandler(w http.ResponseWriter, r *http.Request) {
+	tokenStr, err := getTokenString(w, r)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	userID, err := getUserIDByToken(cfg, tokenStr)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+	}
+
+	chirpID, err := strconv.Atoi(r.PathValue("chirpid"))
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid id")
+		return
+	}
+
+	if err = cfg.db.DeleteChirp(chirpID, userID); err != nil {
+		respondWithError(w, 403, err.Error())
+		return
+	}
+	w.WriteHeader(204)
+}

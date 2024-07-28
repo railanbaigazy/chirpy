@@ -65,3 +65,28 @@ func (db *DB) GetChirpByID(id int) (Chirp, error) {
 
 	return chirp, nil
 }
+
+func (db *DB) DeleteChirp(chirpID int, userID int) error {
+	db.mux.Lock()
+	defer db.mux.Unlock()
+
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+
+	chirp, ok := dbStructure.Chirps[chirpID]
+	if !ok {
+		return errors.New("chirp not found")
+	}
+
+	if chirp.AuthorID != userID {
+		return errors.New("access denied")
+	}
+	delete(dbStructure.Chirps, chirpID)
+
+	if err = db.writeDB(dbStructure); err != nil {
+		return err
+	}
+	return nil
+}
