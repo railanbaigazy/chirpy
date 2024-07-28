@@ -70,7 +70,9 @@ func cleanText(body string) string {
 
 func (cfg *apiConfig) getChirpsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	chirps, err := cfg.db.GetChirps()
+	authorID := r.URL.Query().Get("author_id")
+
+	chirps, err := cfg.db.GetChirps(authorID)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, fmt.Sprint(err))
 		return

@@ -1,6 +1,9 @@
 package database
 
-import "errors"
+import (
+	"errors"
+	"strconv"
+)
 
 type Chirp struct {
 	ID       int    `json:"id"`
@@ -33,7 +36,7 @@ func (db *DB) CreateChirp(body string, userID int) (Chirp, error) {
 	return newChirp, nil
 }
 
-func (db *DB) GetChirps() ([]Chirp, error) {
+func (db *DB) GetChirps(authorIDStr string) ([]Chirp, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 
@@ -43,8 +46,22 @@ func (db *DB) GetChirps() ([]Chirp, error) {
 	}
 
 	chirps := make([]Chirp, 0, len(dbStructure.Chirps))
+	if authorIDStr == "" {
+		for _, chirp := range dbStructure.Chirps {
+			chirps = append(chirps, chirp)
+		}
+		return chirps, nil
+	}
+
+	authorID, err := strconv.Atoi(authorIDStr)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, chirp := range dbStructure.Chirps {
-		chirps = append(chirps, chirp)
+		if chirp.AuthorID == authorID {
+			chirps = append(chirps, chirp)
+		}
 	}
 	return chirps, nil
 }
