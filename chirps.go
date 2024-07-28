@@ -18,7 +18,7 @@ var profanes []string = []string{"kerfuffle", "sharbert", "fornax"}
 func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	tokenStr, err := getTokenString(w, r)
+	tokenStr, err := getTokenString(r)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
@@ -95,7 +95,7 @@ func (cfg *apiConfig) getChirpByIDHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (cfg *apiConfig) deleteChirpHandler(w http.ResponseWriter, r *http.Request) {
-	tokenStr, err := getTokenString(w, r)
+	tokenStr, err := getTokenString(r)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
 		return

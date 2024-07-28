@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 	"regexp"
 
 	"golang.org/x/crypto/bcrypt"
@@ -44,7 +45,7 @@ func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (cfg *apiConfig) updateUserHandler(w http.ResponseWriter, r *http.Request) {
-	tokenStr, err := getTokenString(w, r)
+	tokenStr, err := getTokenString(r)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, err.Error())
 	}
@@ -96,15 +97,26 @@ type upgradeRequest struct {
 }
 
 func (cfg *apiConfig) upgradeUserHandler(w http.ResponseWriter, r *http.Request) {
+	apiKey, err := getApiKey(r)
+	if err != nil {
+		w.WriteHeader(401)
+		return
+	}
+	key := os.Getenv("POLKA_KEY")
+	if apiKey != key {
+		w.WriteHeader(401)
+		return
+	}
+
 	upgradeReq := upgradeRequest{}
-	err := json.NewDecoder(r.Body).Decode(&upgradeReq)
+	err = json.NewDecoder(r.Body).Decode(&upgradeReq)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	w.WriteHeader(204)
 	if upgradeReq.Event != "user.upgraded" {
+		w.WriteHeader(204)
 		return
 	}
 	err = cfg.db.UpgradeUser(upgradeReq.Data.UserID)
@@ -112,4 +124,5 @@ func (cfg *apiConfig) upgradeUserHandler(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(404)
 		return
 	}
+	w.WriteHeader(204)
 }

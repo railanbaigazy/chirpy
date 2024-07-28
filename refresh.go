@@ -5,7 +5,7 @@ import "net/http"
 func (cfg *apiConfig) refreshAccessTokenHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	tokenStr, err := getTokenString(w, r)
+	tokenStr, err := getTokenString(r)
 	if err != nil {
 		respondWithError(w, 401, err.Error())
 		return

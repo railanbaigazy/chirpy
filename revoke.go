@@ -3,7 +3,7 @@ package main
 import "net/http"
 
 func (cfg *apiConfig) revokeRefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
-	tokenStr, err := getTokenString(w, r)
+	tokenStr, err := getTokenString(r)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
