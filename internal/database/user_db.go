@@ -19,11 +19,13 @@ type User struct {
 	Password           []byte    `json:"password"`
 	RefreshToken       string    `json:"refresh_token"`
 	RefreshTokenExpiry time.Time `json:"refresh_token_expiry"`
+	IsChirpyRed        bool      `json:"is_chirpy_red"`
 }
 
 type UserResp struct {
-	ID    int    `json:"id"`
-	Email string `json:"email"`
+	ID          int    `json:"id"`
+	Email       string `json:"email"`
+	IsChirpyRed bool   `json:"is_chirpy_red"`
 }
 
 type LoginResp struct {
@@ -31,6 +33,7 @@ type LoginResp struct {
 	Email        string `json:"email"`
 	Token        string `json:"token"`
 	RefreshToken string `json:"refresh_token"`
+	IsChirpyRed  bool   `json:"is_chirpy_red"`
 }
 
 type RefreshResp struct {
@@ -52,13 +55,15 @@ func (db *DB) CreateUser(email string, password []byte) (UserResp, error) {
 
 	id := len(dbStructure.Users) + 1
 	user := User{
-		ID:       id,
-		Email:    strings.ToLower(email),
-		Password: password,
+		ID:          id,
+		Email:       strings.ToLower(email),
+		Password:    password,
+		IsChirpyRed: false,
 	}
 	userResp := UserResp{
-		ID:    id,
-		Email: strings.ToLower(email),
+		ID:          id,
+		Email:       strings.ToLower(email),
+		IsChirpyRed: false,
 	}
 
 	dbStructure.Users[id] = user
@@ -124,6 +129,7 @@ func (db *DB) Login(email string, password string, secretKey []byte) (LoginResp,
 		Email:        user.Email,
 		Token:        tokenString,
 		RefreshToken: refreshToken,
+		IsChirpyRed:  user.IsChirpyRed,
 	}
 
 	return loginResp, nil
@@ -158,6 +164,7 @@ func (db *DB) UpdateUser(id int, newEmail string, newPassword []byte) (UserResp,
 		Password:           newPassword,
 		RefreshToken:       userBody.RefreshToken,
 		RefreshTokenExpiry: userBody.RefreshTokenExpiry,
+		IsChirpyRed:        userBody.IsChirpyRed,
 	}
 
 	dbStructure.Users[id] = user

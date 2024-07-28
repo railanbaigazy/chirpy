@@ -87,3 +87,29 @@ func validatePassword(w http.ResponseWriter, password string) []byte {
 	}
 	return hashPassword
 }
+
+type upgradeRequest struct {
+	Event string `json:"event"`
+	Data  struct {
+		UserID int `json:"user_id"`
+	} `json:"data"`
+}
+
+func (cfg *apiConfig) upgradeUserHandler(w http.ResponseWriter, r *http.Request) {
+	upgradeReq := upgradeRequest{}
+	err := json.NewDecoder(r.Body).Decode(&upgradeReq)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	w.WriteHeader(204)
+	if upgradeReq.Event != "user.upgraded" {
+		return
+	}
+	err = cfg.db.UpgradeUser(upgradeReq.Data.UserID)
+	if err != nil {
+		w.WriteHeader(404)
+		return
+	}
+}

@@ -44,6 +44,8 @@ func runServer() error {
 	mux.HandleFunc("POST /api/refresh", apiCfg.refreshAccessTokenHandler)
 	mux.HandleFunc("POST /api/revoke", apiCfg.revokeRefreshTokenHandler)
 
+	mux.HandleFunc("POST /api/polka/webhooks", apiCfg.upgradeUserHandler)
+
 	server := &http.Server{
 		Addr:    ":" + port,
 		Handler: mux,
