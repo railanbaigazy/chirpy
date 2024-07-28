@@ -36,6 +36,8 @@ func runServer() error {
 	mux.HandleFunc("POST /api/users", apiCfg.createUserHandler)
 	mux.HandleFunc("POST /api/login", apiCfg.loginHandler)
 	mux.HandleFunc("PUT /api/users", apiCfg.updateUserHandler)
+	mux.HandleFunc("POST /api/refresh", apiCfg.refreshAccessTokenHandler)
+	mux.HandleFunc("POST /api/revoke", apiCfg.revokeRefreshTokenHandler)
 
 	server := &http.Server{
 		Addr:    ":" + port,

@@ -2,11 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -24,7 +22,7 @@ func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request) 
 	userReq := userRequest{}
 	err := json.NewDecoder(r.Body).Decode(&userReq)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, fmt.Sprint(err))
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -41,7 +39,7 @@ func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request) 
 
 	user, err := cfg.db.CreateUser(userReq.Email, hashPassword)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, fmt.Sprint(err))
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -49,18 +47,10 @@ func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (cfg *apiConfig) updateUserHandler(w http.ResponseWriter, r *http.Request) {
-	headerText := r.Header.Get("Authorization")
-	if headerText == "" {
-		respondWithError(w, http.StatusUnauthorized, "authorization header missing")
-		return
+	tokenStr, err := getTokenString(w, r)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, err.Error())
 	}
-
-	prefix := "Bearer "
-	if !strings.HasPrefix(headerText, prefix) {
-		respondWithError(w, http.StatusUnauthorized, "invalid token format")
-		return
-	}
-	tokenStr := strings.TrimPrefix(headerText, prefix)
 
 	token, err := jwt.ParseWithClaims(tokenStr, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
 		// if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -88,7 +78,7 @@ func (cfg *apiConfig) updateUserHandler(w http.ResponseWriter, r *http.Request) 
 	userReq := userRequest{}
 	err = json.NewDecoder(r.Body).Decode(&userReq)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, fmt.Sprint(err))
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -99,7 +89,7 @@ func (cfg *apiConfig) updateUserHandler(w http.ResponseWriter, r *http.Request) 
 
 	user, err := cfg.db.UpdateUser(userID, userReq.Email, hashPassword)
 	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, fmt.Sprint(err))
+		respondWithError(w, http.StatusUnauthorized, err.Error())
 		return
 	}
 
@@ -113,7 +103,7 @@ func validatePassword(w http.ResponseWriter, password string) []byte {
 	}
 	hashPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, fmt.Sprint(err))
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return nil
 	}
 	return hashPassword

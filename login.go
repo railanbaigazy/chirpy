@@ -7,9 +7,8 @@ import (
 )
 
 type loginRequest struct {
-	Email            string `json:"email"`
-	Password         string `json:"password"`
-	ExpiresInSeconds int    `json:"expires_in_seconds"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -22,7 +21,7 @@ func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := cfg.db.Login(loginReq.Email, loginReq.Password, []byte(cfg.jwtSecret), loginReq.ExpiresInSeconds)
+	user, err := cfg.db.Login(loginReq.Email, loginReq.Password, []byte(cfg.jwtSecret))
 	if err != nil {
 		respondWithError(w, 401, fmt.Sprint(err))
 		return
