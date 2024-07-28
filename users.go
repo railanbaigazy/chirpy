@@ -4,10 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"regexp"
-	"strconv"
-	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -52,27 +49,9 @@ func (cfg *apiConfig) updateUserHandler(w http.ResponseWriter, r *http.Request) 
 		respondWithError(w, http.StatusUnauthorized, err.Error())
 	}
 
-	token, err := jwt.ParseWithClaims(tokenStr, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
-		// if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-		// 	return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		// }
-		return []byte(cfg.jwtSecret), nil
-	})
-	if err != nil || !token.Valid {
-		respondWithError(w, http.StatusUnauthorized, "invalid token")
-		return
-	}
-
-	claims, ok := token.Claims.(*jwt.RegisteredClaims)
-	if !ok || claims.ExpiresAt == nil || claims.ExpiresAt.Before(time.Now().UTC()) {
-		respondWithError(w, http.StatusUnauthorized, "invalid token claims")
-		return
-	}
-
-	userID, err := strconv.Atoi(claims.Subject)
+	userID, err := getUserIDByToken(cfg, tokenStr)
 	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "invalid user ID")
-		return
+		respondWithError(w, http.StatusBadRequest, err.Error())
 	}
 
 	userReq := userRequest{}

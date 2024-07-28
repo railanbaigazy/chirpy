@@ -18,22 +18,33 @@ var profanes []string = []string{"kerfuffle", "sharbert", "fornax"}
 func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	chirpReq := chirpRequest{}
-	err := json.NewDecoder(r.Body).Decode(&chirpReq)
+	tokenStr, err := getTokenString(w, r)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid request body")
+		respondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	userID, err := getUserIDByToken(cfg, tokenStr)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+	}
+
+	chirpReq := chirpRequest{}
+	err = json.NewDecoder(r.Body).Decode(&chirpReq)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
 	if len(chirpReq.Body) > 140 {
-		respondWithError(w, http.StatusBadRequest, "Chirp is too long")
+		respondWithError(w, http.StatusBadRequest, "chirp is too long")
 		return
 	}
 
 	cleanedBody := cleanText(chirpReq.Body)
-	chirp, err := cfg.db.CreateChirp(cleanedBody)
+	chirp, err := cfg.db.CreateChirp(cleanedBody, userID)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, fmt.Sprint(err))
+		respondWithError(w, http.StatusBadRequest, err.Error())
 	}
 	respondWithJSON(w, 201, chirp)
 }

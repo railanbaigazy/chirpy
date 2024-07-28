@@ -3,11 +3,12 @@ package database
 import "errors"
 
 type Chirp struct {
-	ID   int    `json:"id"`
-	Body string `json:"body"`
+	ID       int    `json:"id"`
+	Body     string `json:"body"`
+	AuthorID int    `json:"author_id"`
 }
 
-func (db *DB) CreateChirp(body string) (Chirp, error) {
+func (db *DB) CreateChirp(body string, userID int) (Chirp, error) {
 	db.mux.Lock()
 	defer db.mux.Unlock()
 
@@ -18,8 +19,9 @@ func (db *DB) CreateChirp(body string) (Chirp, error) {
 
 	newID := len(dbStructure.Chirps) + 1
 	newChirp := Chirp{
-		ID:   newID,
-		Body: body,
+		ID:       newID,
+		Body:     body,
+		AuthorID: userID,
 	}
 
 	dbStructure.Chirps[newID] = newChirp
@@ -42,7 +44,7 @@ func (db *DB) GetChirps() ([]Chirp, error) {
 
 	chirps := make([]Chirp, 0, len(dbStructure.Chirps))
 	for _, chirp := range dbStructure.Chirps {
-		chirps = append(chirps, Chirp{ID: chirp.ID, Body: chirp.Body})
+		chirps = append(chirps, chirp)
 	}
 	return chirps, nil
 }
