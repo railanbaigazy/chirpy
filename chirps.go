@@ -71,13 +71,23 @@ func cleanText(body string) string {
 func (cfg *apiConfig) getChirpsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	authorID := r.URL.Query().Get("author_id")
+	sortType := r.URL.Query().Get("sort")
+	if sortType == "" {
+		sortType = "asc"
+	}
 
 	chirps, err := cfg.db.GetChirps(authorID)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, fmt.Sprint(err))
 		return
 	}
-	sort.Slice(chirps, func(i, j int) bool { return chirps[i].ID < chirps[j].ID })
+
+	if sortType == "asc" {
+		sort.Slice(chirps, func(i, j int) bool { return chirps[i].ID < chirps[j].ID })
+	} else if sortType == "desc" {
+		sort.Slice(chirps, func(i, j int) bool { return chirps[i].ID > chirps[j].ID })
+	}
+
 	respondWithJSON(w, http.StatusOK, chirps)
 }
 
